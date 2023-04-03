@@ -15,6 +15,7 @@ w = Window("No Vacancy", Rect(
 .background_(~redGray)
 .onClose_({
 	s.freeAll;
+	~recTask.stop;
 });
 
 ///START BUTTONS///START BUTTONS///START BUTTONS///START BUTTONS///START BUTTONS///START BUTTONS///START BUTTONS
@@ -135,16 +136,11 @@ w = Window("No Vacancy", Rect(
 	if(~patternPlayer.isPlaying, {~patternPlayer.stop});
 	if(~patternPlayer1.isPlaying, {~patternPlayer1.stop});
 	if(~patternPlayer2.isPlaying, {~patternPlayer2.stop});
-	if(t.isPlaying, {t.stop});
+	~trig = 3;
+	~recTask.stop;
+	~recTask.reset;
 
 	~currentLetter.string_("");
-
-	OSCdef(\aToB).disable;
-	OSCdef(\bToC).disable;
-	OSCdef(\cToD).disable;
-	OSCdef(\dToE).disable;
-	OSCdef(\eToF).disable;
-	OSCdef(\fToG).disable;
 
 	~stopButtonGuiFunc.value;
 	~recordButton.value = 0;
@@ -342,3 +338,6 @@ w = Window("No Vacancy", Rect(
 }
 );
 s.plotTree;
+
+
+

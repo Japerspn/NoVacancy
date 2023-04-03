@@ -40,11 +40,11 @@ s.waitForBoot({
 	//////////////// BUFFERS
 	Buffer.freeAll;
 	~bansuri = Array.new;
-	~folder = PathName.new("/Users/jamesparker/Documents/Projects/Art/NoVacancy/Bansuri_Samples/");
+	~folder = PathName.new(thisProcess.nowExecutingPath.dirname +/+ "Bansuri_Samples/");
 	~folder.entries.do({ |path| ~bansuri = ~bansuri.add(Buffer.readChannel(s, path.fullPath, channels: 1)) });
 
 	~numbers = Array.new;
-	~folder = PathName.new("/Users/jamesparker/Documents/Projects/Art/NoVacancy/numbers/");
+	~folder = PathName.new(thisProcess.nowExecutingPath.dirname +/+ "numbers/");
 	~folder.entries.do({ |path| ~numbers = ~numbers.add(Buffer.readChannel(s, path.fullPath, channels: 0)) });
 
 	~buffers = Array.fill(10, {Buffer.alloc(s, 10*s.sampleRate)});
@@ -73,7 +73,7 @@ s.waitForBoot({
 	}).add;
 
 	SynthDef(\Grain, {
-		arg amp = 0.25, grBuf = 0, grHz = 10, grLen = 0.1, pShift = 0, type = 0, playrate = 1, rndoff = 0;
+		arg amp = 0.25, grBuf = 0, grHz = 10, grLen = 0.1, pShift = 0, type = 0, playrate = 1, rndoff = 0, outBus = 0;
 
 		var sig, trig, pan, phase, pos, offset, shift = 2**(pShift/12), bufsize = BufFrames.kr(grBuf);
 
@@ -87,7 +87,7 @@ s.waitForBoot({
 		pos = (phase*bufsize.reciprocal/* + offset*/).wrap(0,1);
 		sig = GrainBuf.ar(2, trig, grLen + offset, grBuf, shift, pos, pan: pan);
 		sig = FreeVerb.ar(sig, 1, 1, 0);
-		Out.ar(0,sig*amp);
+		Out.ar(outBus ,sig*amp);
 	}).add;
 
 	SynthDef(\whisperDelay, {
