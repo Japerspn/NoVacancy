@@ -1,4 +1,4 @@
-~letterAFunc = {
+~letterAFunc = {//Whisper Delay
 	"***Letter A***".postln;
 	{~currentLetter.string_("A")}.defer;
 	Synth(\playbuf, [\bufnum, ~numbers[0], \loop, 0]);
@@ -9,7 +9,7 @@
 };
 //~letterAFunc.value
 
-~letterBFunc = {
+~letterBFunc = {//Whisper Delay with Amplitude Threshhold
 	"***Letter B***".postln;
 	{~currentLetter.string_("B")}.defer;
 	Synth(\playbuf, [\bufnum, ~numbers[1], \loop, 0]);
@@ -20,7 +20,6 @@
 };
 
 (
-~grains = Array(10);
 ~trig = 0;
 ~recTask = Task({
 	while({~trig != 3}, {
@@ -45,13 +44,63 @@
 })});
 );
 
-~letterCFunc = {
+~letterCFunc = {//Buffer record w/ grainy playback
 	"***Letter C***".postln;
 	{~currentLetter.string_("C")}.defer;
 	Synth(\playbuf, [\bufnum, ~numbers[2], \loop, 0]);
 	~trig = 0;
 	~recTask.play(AppClock);
 
+};
+
+(
+~pbs = Array(3);
+~trig = 0;
+~recTask2 = Task({
+	while({~trig != 3}, {
+		"Task has begun".postln;
+		~trig.postln;
+		5.wait;
+		"recording".postln;
+		~trig.postln;
+		~record = Synth(\record, [\bufnum, ~buffers[~trig]]);
+		~recordingText.visible_(true);
+		10.wait;
+		"recording stopped".postln;
+		~recordingText.visible_(false);
+		~trig.postln;
+		5.wait;
+		"normal playback begins".postln;
+		~pbs = ~pbs.add(Synth(\playbuf, [\bufnum, ~buffers[~trig], \mix, 0.66, \outBus, ~wetBus], ~sources));
+		~trig.postln;
+		2.wait;
+		~trig = ~trig + 1;
+		~trig.postln;
+})});
+);
+
+//3.do({|i| ~pbs[i].set(\gate, 0)});// freeing all the synths made with the task above. Free one at a time with ~pbs[#].set(\gate, 0)
+
+~letterDFunc = {//buffer record w/ normal playback
+	"***Letter D***".postln;
+	{~currentLetter.string_("D")}.defer;
+	~trig = 0;
+	~recTask2.play(AppClock);
+};
+
+~letterEFunc = {//Boomtown Delay
+	"***Letter E***".postln;
+	{~currentLetter.string_("E")}.defer;
+};
+
+~letterFFunc = {//Tap Delay
+	"***Letter F***".postln;
+	{~currentLetter.string_("F")}.defer;
+};
+
+~letterGFunc = {//Chorale
+	"***Letter G***".postln;
+	{~currentLetter.string_("G")}.defer;
 };
 /*
 

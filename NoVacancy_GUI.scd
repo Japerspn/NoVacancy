@@ -83,9 +83,11 @@ w = Window("No Vacancy", Rect(
 	if(~practiceModeCheckBox.value, {
 		~outSynthSetup.value;
 		~startButtonGuiFunc.value;
+		~letterDFunc.value;
 	},{
 		~outSynthSetup.value;
 		~startButtonGuiFunc.value;
+		~letterDFunc.value;
 	});
 });
 
@@ -94,10 +96,11 @@ w = Window("No Vacancy", Rect(
 	if(~practiceModeCheckBox.value, {
 		~outSynthSetup.value;
 		~startButtonGuiFunc.value;
-
+		~letterEFunc.value;
 	},{
 		~outSynthSetup.value;
 		~startButtonGuiFunc.value;
+		~letterEFunc.value;
 	});
 });
 
@@ -106,9 +109,11 @@ w = Window("No Vacancy", Rect(
 	if(~practiceModeCheckBox.value, {
 		~outSynthSetup.value;
 		~startButtonGuiFunc.value;
+		~letterFFunc.value;
 	}, {
 		~outSynthSetup.value;
 		~startButtonGuiFunc.value;
+		~letterFFunc.value;
 	});
 });
 
@@ -116,6 +121,7 @@ w = Window("No Vacancy", Rect(
 .action_({
 	~outSynthSetup.value;
 	~startButtonGuiFunc.value;
+	~letterGFunc.value;
 });
 
 ///OTHER BUTTONS///OTHER BUTTONS///OTHER BUTTONS///OTHER BUTTONS///OTHER BUTTONS///OTHER BUTTONS///

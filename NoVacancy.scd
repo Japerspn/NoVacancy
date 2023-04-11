@@ -63,14 +63,13 @@ s.waitForBoot({
 	}).add;
 
 	SynthDef(\playbuf, {
-		arg amp = 1, outBus = 0, gate = 1, bufnum = 0, rate = 1, loop = 1, ratio = 1;
+		arg amp = 1, outBus = 0, gate = 1, bufnum = 0, rate = 1, loop = 1, mix = 0.33, room = 0.5, damp = 0.5;
 		var sig, env;
 
 		env = EnvGen.kr(Env.asr, gate, doneAction: 2);
 
 		sig = PlayBuf.ar(1, bufnum, rate, loop: loop, doneAction: 2);
-		sig = PitchShift.ar(sig, 0, ratio);
-
+		sig = FreeVerb.ar(sig, mix, room, damp);
 		Out.ar(outBus, sig * amp * env);
 	}).add;
 
@@ -302,6 +301,8 @@ y.set(\gate, 0)
 Buffer
 ~record = Synth(\record, [\bufnum, ~buffers[0]]);
 ~buffers[0].play
-~play = Synth(\playBuf)
+~play = Synth(\playbuf, [\bufnum, ~bansuri[5], \mix, 0.66])
+~play.set(\mix, 0.66)
+~play.set(\gate, 0)
 
 s.plotTree;
