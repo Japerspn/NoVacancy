@@ -40,7 +40,7 @@ s.waitForBoot({
 	//////////////// BUFFERS
 	Buffer.freeAll;
 	~bansuri = Array.new;
-	~folder = PathName.new(thisProcess.nowExecutingPath.dirname +/+ "Bansuri_Samples/");
+	~folder = PathName.new(thisProcess.nowExecutingPath.dirname +/+ "bansuri/");
 	~folder.entries.do({ |path| ~bansuri = ~bansuri.add(Buffer.readChannel(s, path.fullPath, channels: 1)) });
 
 	~numbers = Array.new;
@@ -63,12 +63,14 @@ s.waitForBoot({
 	}).add;
 
 	SynthDef(\playbuf, {
-		arg amp = 1, outBus = 0, gate = 1, bufnum = 0, rate = 1, loop = 1;
+		arg amp = 1, outBus = 0, gate = 1, bufnum = 0, rate = 1, loop = 1, ratio = 1;
 		var sig, env;
 
 		env = EnvGen.kr(Env.asr, gate, doneAction: 2);
 
 		sig = PlayBuf.ar(1, bufnum, rate, loop: loop, doneAction: 2);
+		sig = PitchShift.ar(sig, 0, ratio);
+
 		Out.ar(outBus, sig * amp * env);
 	}).add;
 
@@ -142,6 +144,7 @@ s.waitForBoot({
 
 	~whisperFreqs = Array.fill(11, {|i| i * 300});
 	~whisperTs = Array.fill(11, {|i| i**2 / 32});
+	~intervals= [1, 17/16, 9/8, 19/16, 5/4, 11/8, 23/16, 3/2, 13/8, 27/16, 29/16, 15/18, 2];
 
 	s.sync;
 	"arrays loaded".postln;
@@ -191,19 +194,59 @@ Routine({
 
 t.start
 (
-SynthDef(\playbuf1, {
-	arg amp = 0.5, outBus = 0, gate = 1, bufnum = 0, rate = 1, loop = 1, pos = 0;
+SynthDef(\pitchShift, {
+	arg amp = 1, outBus = 0, gate = 1, bufnum = 0, rate = 1, loop = 1, ratio = 0, mix = 0.66, room = 1, damp = 1, pan = 0;
 	var sig, env;
 
 	env = EnvGen.kr(Env.asr, gate, doneAction: 2);
 
 	sig = PlayBuf.ar(1, bufnum, rate, loop: loop, doneAction: 2);
-	sig = Pan2.ar(sig, pos);
+	sig = PitchShift.ar(sig, 0.2, ratio.lag(2));
+	sig = LPF.ar(sig, 500);
+	sig = FreeVerb.ar(sig, mix, room, damp);
+	sig = Pan2.ar(sig, pan);
 	Out.ar(outBus, sig * amp * env);
 }).add;
 )
+~intervals= [1, 17/16, 9/8, 19/16, 5/4, 11/8, 23/16, 3/2, 13/8, 27/16, 29/16, 15/18, 2];
+~intervals
+(
+x = Synth(\pitchShift, [\bufnum: ~bansuri[7], \ratio: ~intervals[0], \pan: -0.5]);
+y = Synth(\pitchShift, [\bufnum: ~bansuri[7], \ratio: ~intervals[3]/2, \pan: 0]);
+z = Synth(\pitchShift, [\bufnum: ~bansuri[7], \ratio: ~intervals[7], \pan: 0.5]);
+);
 
-x = Synth(\playbuf1, [\bufnum: ~bansuri[1]])
+(
+x.set(\ratio, ~intervals[0]);
+y.set(\ratio, ~intervals[3]/2);
+z.set(\ratio, ~intervals[7]);
+);
+
+(
+x.set(\ratio, ~intervals[10]/2);
+y.set(\ratio, ~intervals[3]/2);
+z.set(\ratio, ~intervals[5]);
+);
+
+
+(
+p = Pdef(\pat,Pbind(
+	\instrument, \pitchShift,
+	\bufnum, ~bansuri[7],
+	\ratio, ~intervals[4],
+	\dur, Prand(Array.fill(10, {0.2.rand+0.9}), inf),
+	\legato, 3,
+	\amp, 1
+
+));
+p.play;
+);
+
+0.2.rand+0.9
+
+z.set(\ratio, 11/8)
+
+x.set(\gate, 0)
 (
 SynthDef(\whisperDelay, {
 	arg amp = 1, delT = 0.1, freq = 440, rq = 1, thresh = 0.2, pan = 0, outBus = 0;

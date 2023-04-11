@@ -30,8 +30,10 @@
 		"recording".postln;
 		~trig.postln;
 		~record = Synth(\record, [\bufnum, ~buffers[~trig]]);
+		~recordingText.visible_(true);
 		10.wait;
 		"recording stopped".postln;
+		~recordingText.visible_(false);
 		~trig.postln;
 		5.wait;
 		Synth(\Grain, [\grBuf, ~buffers[~trig], \grHz, 7, \amp, 0.5, \grLen, 0.4, \type, 0, \playrate, -0.3, \outBus, ~wetBus], ~sources);
@@ -41,7 +43,7 @@
 		~trig = ~trig + 1;
 		~trig.postln;
 })});
-)
+);
 
 ~letterCFunc = {
 	"***Letter C***".postln;

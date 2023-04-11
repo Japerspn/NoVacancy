@@ -251,6 +251,12 @@ w = Window("No Vacancy", Rect(
 
 ~meters = ServerMeterView(s, w, 520@50, 1, 2);
 
+~recordingText = StaticText(w, Rect(188,435,263,40))
+.string_("Buffer is recording!")
+.font_(Font("Futura", 30, true, true))
+.visible_(false)
+.stringColor_(~red);
+
 ///DESIGN ELEMENTS///DESIGN ELEMENTS///DESIGN ELEMENTS///DESIGN ELEMENTS///DESIGN ELEMENTS///DESIGN ELEMENTS
 ///DESIGN ELEMENTS///DESIGN ELEMENTS///DESIGN ELEMENTS///DESIGN ELEMENTS///DESIGN ELEMENTS///DESIGN ELEMENTS
 ///DESIGN ELEMENTS///DESIGN ELEMENTS///DESIGN ELEMENTS///DESIGN ELEMENTS///DESIGN ELEMENTS///DESIGN ELEMENTS
@@ -301,12 +307,16 @@ w = Window("No Vacancy", Rect(
 ~startButtonGuiFunc = {
 	~notStopButtons.do({|button| button.visible_("false") });
 	~stopButton.visible_("true");
+	~recordingText.visible_(false);
+
 };
 
 ~stopButtonGuiFunc = {
 	~notStopButtons.do({|button| button.visible_("true") });
 	~stopButton.visible_("false");
 	~practiceText.visible_("false");
+	~recordingText.visible_(false);
+
 };
 ////////
 ////////
