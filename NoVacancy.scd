@@ -62,6 +62,17 @@ s.waitForBoot({
 		RecordBuf.ar(sig, bufnum, recLevel: gain, run: run, loop: 0, doneAction: 2);
 	}).add;
 
+	SynthDef(\recordBuf, {// records into specified buffer
+		arg bufnum = 0, loop = 1, inbus = 0, outbus = 0, gate = 1, rel = 10, atk = 5;
+		var sig, env;
+
+		env = EnvGen.kr(Env.adsr(atk, 1, 1, rel), gate: gate, doneAction: 2);
+
+		sig = RecordBuf.ar(SoundIn.ar(inbus), bufnum, loop: loop, doneAction: 2);// if loop = 0, buffer does not repeat.
+		sig = sig * env;
+		//Out.ar(outbus, sig)
+	}).add;
+
 	SynthDef(\playbuf, {
 		arg amp = 1, outBus = 0, gate = 1, bufnum = 0, rate = 1, loop = 1, mix = 0.33, room = 0.5, damp = 0.5;
 		var sig, env;
@@ -107,6 +118,51 @@ s.waitForBoot({
 		Out.ar(outBus, sig * amp * env * LFNoise1.kr(LFNoise0.kr(1, 6, 6), 0.4, 0.4));
 	}).add;
 
+	SynthDef(\delay, {
+		arg amp = 1, delT = 0.5, decT = 1, outBus = 0, gate = 1, mix = 0.33, room = 0.5, damp = 0.5;
+		var sig, env;
+
+		env = EnvGen.kr(Env.asr, gate, doneAction: 2);
+		sig = SoundIn.ar(0);
+		decT = LFNoise2.kr(0.25, 5, 5).poll;
+		sig = CombL.ar(sig, 1, delT, decT);
+		sig = Pan2.ar(sig, LFNoise2.kr(1/5));
+		sig = FreeVerb.ar(sig, decT/8+0.1, room, damp);
+		Out.ar(0, sig * env * amp);
+	}).add;
+
+	SynthDef(\pitchShift, {
+		arg amp = 1, outBus = 0, gate = 1, bufnum = 0, rate = 1, loop = 1, ratio = 0, mix = 0.33, room = 0.5, damp = 0.5, pan = 0, delT = 0.5, decT = 5;
+		var sig, env, dustEnv;
+
+		env = EnvGen.kr(Env.asr, gate, doneAction: 2);
+		dustEnv = EnvGen.kr(Env([1,0,1], [0.01, 2]), gate = Dust.kr(1));
+		//sig = PlayBuf.ar(1, bufnum, rate, loop: loop, doneAction: 2);
+		sig = SoundIn.ar(0);
+		sig = PitchShift.ar(sig, 0.2, ratio.lag(0.2));
+		sig = Pan2.ar(sig * dustEnv, LFNoise2.kr(1/5));
+		//sig = LPF.ar(sig, 500);
+		sig = FreeVerb.ar(sig, mix, room, damp);
+		Out.ar(outBus, sig * amp * env);
+	}).add;
+
+	SynthDef(\playbackBuf, {// plays specified buffer w/ reverb
+		arg bufnum = 0, rate = 1, outbus = 0, loop = 1, mix = 0.33, room = 0.5, gate = 1, atk = 5, rel = 10;
+		var sig, env;
+
+		env = EnvGen.kr(Env.adsr(atk, 1, 1, rel), gate: gate, doneAction: 2);
+
+
+		sig = PlayBuf.ar(1, bufnum, BufRateScale.kr(bufnum) * rate, loop: loop, doneAction: 2);
+		sig = PitchShift.ar(sig, pitchRatio: rate.reciprocal);
+		sig = LPF.ar(sig, 3000);
+		sig = HPF.ar(sig, 300);
+		sig = FreeVerb.ar(sig, mix, room);
+		sig = sig * env;
+
+		Out.ar(~wetBus, sig * 2);
+	}).add;
+
 	SynthDef(\outSynth, {
 		arg amp = 1, inbus = 0, otherOut = 0;
 		var sig;
@@ -143,7 +199,7 @@ s.waitForBoot({
 
 	~whisperFreqs = Array.fill(11, {|i| i * 300});
 	~whisperTs = Array.fill(11, {|i| i**2 / 32});
-	~intervals= [1, 17/16, 9/8, 19/16, 5/4, 11/8, 23/16, 3/2, 13/8, 27/16, 29/16, 15/18, 2];
+	~int= [1, 17/16, 9/8, 19/16, 5/4, 11/8, 23/16, 3/2, 13/8, 27/16, 29/16, 15/8, 2];
 
 	s.sync;
 	"arrays loaded".postln;
@@ -192,60 +248,8 @@ Routine({
 
 
 t.start
-(
-SynthDef(\pitchShift, {
-	arg amp = 1, outBus = 0, gate = 1, bufnum = 0, rate = 1, loop = 1, ratio = 0, mix = 0.66, room = 1, damp = 1, pan = 0;
-	var sig, env;
-
-	env = EnvGen.kr(Env.asr, gate, doneAction: 2);
-
-	sig = PlayBuf.ar(1, bufnum, rate, loop: loop, doneAction: 2);
-	sig = PitchShift.ar(sig, 0.2, ratio.lag(2));
-	sig = LPF.ar(sig, 500);
-	sig = FreeVerb.ar(sig, mix, room, damp);
-	sig = Pan2.ar(sig, pan);
-	Out.ar(outBus, sig * amp * env);
-}).add;
-)
-~intervals= [1, 17/16, 9/8, 19/16, 5/4, 11/8, 23/16, 3/2, 13/8, 27/16, 29/16, 15/18, 2];
-~intervals
-(
-x = Synth(\pitchShift, [\bufnum: ~bansuri[7], \ratio: ~intervals[0], \pan: -0.5]);
-y = Synth(\pitchShift, [\bufnum: ~bansuri[7], \ratio: ~intervals[3]/2, \pan: 0]);
-z = Synth(\pitchShift, [\bufnum: ~bansuri[7], \ratio: ~intervals[7], \pan: 0.5]);
-);
-
-(
-x.set(\ratio, ~intervals[0]);
-y.set(\ratio, ~intervals[3]/2);
-z.set(\ratio, ~intervals[7]);
-);
-
-(
-x.set(\ratio, ~intervals[10]/2);
-y.set(\ratio, ~intervals[3]/2);
-z.set(\ratio, ~intervals[5]);
-);
 
 
-(
-p = Pdef(\pat,Pbind(
-	\instrument, \pitchShift,
-	\bufnum, ~bansuri[7],
-	\ratio, ~intervals[4],
-	\dur, Prand(Array.fill(10, {0.2.rand+0.9}), inf),
-	\legato, 3,
-	\amp, 1
-
-));
-p.play;
-);
-
-0.2.rand+0.9
-
-z.set(\ratio, 11/8)
-
-x.set(\gate, 0)
 (
 SynthDef(\whisperDelay, {
 	arg amp = 1, delT = 0.1, freq = 440, rq = 1, thresh = 0.2, pan = 0, outBus = 0;
@@ -306,3 +310,106 @@ Buffer
 ~play.set(\gate, 0)
 
 s.plotTree;
+
+(
+SynthDef(\delay, {
+	arg amp = 1, delT = 0.5, decT = 1, outBus = 0, gate = 1, mix = 0.33, room = 0.5, damp = 0.5;
+	var sig, env;
+
+	env = EnvGen.kr(Env.asr, gate, doneAction: 2);
+	sig = SoundIn.ar(0);
+	decT = LFNoise2.kr(0.25, 5, 5).poll;
+	sig = CombL.ar(sig, 1, delT, decT);
+	sig = Pan2.ar(sig, LFNoise2.kr(1/5));
+	sig = FreeVerb.ar(sig, decT/8+0.1, room, damp);
+	Out.ar(0, sig * env * amp);
+}).add;
+);
+
+x = Synth(\delay, [\delT, 0.5, \decT, 10, \mix, 0.25], ~sources);
+x.set(\delT, 0);
+x.set(\decT, 0);
+x.set(\gate, 0)
+
+(
+SynthDef(\pitchShift, {
+	arg amp = 1, outBus = 0, gate = 1, bufnum = 0, rate = 1, loop = 1, ratio = 0, mix = 0.33, room = 0.5, damp = 0.5, pan = 0, delT = 0.5, decT = 5;
+	var sig, env, dustEnv;
+
+	env = EnvGen.kr(Env.asr, gate, doneAction: 2);
+	dustEnv = EnvGen.kr(Env([1,0,1], [0.01, 2]), gate = Dust.kr(1));
+	//sig = PlayBuf.ar(1, bufnum, rate, loop: loop, doneAction: 2);
+	sig = SoundIn.ar(0);
+	sig = PitchShift.ar(sig, 0.2, ratio.lag(0.2));
+	sig = Pan2.ar(sig * dustEnv, LFNoise2.kr(1/5));
+	//sig = LPF.ar(sig, 500);
+	sig = FreeVerb.ar(sig, mix, room, damp);
+	Out.ar(outBus, sig * amp * env);
+}).add;
+)
+~int= [1, 17/16, 9/8, 19/16, 5/4, 11/8, 23/16, 3/2, 13/8, 27/16, 29/16, 15/8, 2];
+
+~bansuri.size
+
+
+
+
+~chorale.do(_.set(\gate, 0));
+~mult = 1
+(
+~choraleTask = Task({
+	~chorale = [~int[0], ~int[0], ~int[7]].collect({|i| Synth(\pitchShift, [\bufnum: ~bansuri[15], \ratio: i, \room, 0.8, \mix, 0.55, \damp, 0.5], ~sources)});
+	(5 * ~mult).wait;
+	"starting".postln;
+	[~int[0], ~int[2], ~int[7]].do({|i,j|~chorale[j].set(\ratio, i)});
+	(1 * ~mult).wait;
+	[~int[0], ~int[4], ~int[7]].do({|i,j|~chorale[j].set(\ratio, i)});
+	(1 * ~mult).wait;
+	[~int[0], ~int[5], ~int[7]].do({|i,j|~chorale[j].set(\ratio, i)});
+	(2 * ~mult).wait;
+	[~int[0], ~int[3], ~int[9]].do({|i,j|~chorale[j].set(\ratio, i)});
+	(4 * ~mult).wait;
+	[~int[0], ~int[2], ~int[9]].do({|i,j|~chorale[j].set(\ratio, i)});
+	(4 * ~mult).wait;
+
+	[~int[0], ~int[11]/2, ~int[5]].do({|i,j|~chorale[j].set(\ratio, i)});
+	(4 * ~mult).wait;
+	[~int[0], ~int[10]/2, ~int[0]].do({|i,j|~chorale[j].set(\ratio, i)});
+	(4 * ~mult).wait;
+	[~int[0], ~int[9]/2, ~int[0]].do({|i,j|~chorale[j].set(\ratio, i)});
+	(4 * ~mult).wait;
+
+	[~int[0], ~int[9]/2, ~int[2]].do({|i,j|~chorale[j].set(\ratio, i)});
+	(6 * ~mult).wait;
+	[~int[0], ~int[8]/2, ~int[2]].do({|i,j|~chorale[j].set(\ratio, i)});
+	(6 * ~mult).wait;
+	[~int[0], ~int[8]/2, ~int[3]].do({|i,j|~chorale[j].set(\ratio, i)});
+	(6 * ~mult).wait;
+	[~int[0], ~int[7]/2, ~int[3]].do({|i,j|~chorale[j].set(\ratio, i)});
+	(6 * ~mult).wait;
+
+	[~int[0], ~int[5]/2, ~int[5]].do({|i,j|~chorale[j].set(\ratio, i)});
+	"done".postln;
+});
+);
+
+~choraleTask.play
+s.record
+
+
+
+
+
+(
+p = Pdef(\pat,Pbind(
+	\instrument, \pitchShift,
+	\bufnum, ~bansuri[7],
+	\ratio, ~intervals[4],
+	\dur, Prand(Array.fill(10, {0.2.rand+0.9}), inf),
+	\legato, 3,
+	\amp, 1
+
+));
+p.play;
+);
+
